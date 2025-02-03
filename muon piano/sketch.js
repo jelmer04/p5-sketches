@@ -19,6 +19,7 @@ var splashes = [];
 var count = 0;
 
 var started = false;
+var startTime = 0;
 
 //synth
 var synth = new Tone.PolySynth(8, Tone.Synth, {
@@ -159,11 +160,11 @@ function draw() {
     fill(100);
     textSize(6);
     textAlign(RIGHT);
-    text(str((millis() / 1000).toFixed(2)) + " s", width - 5, height - 5);
+    text(str(((millis()-startTime) / 1000).toFixed(2)) + " s", width - 5, height - 5);
 
     textAlign(LEFT);
     text(
-      str(((count / millis() / rate) * 1000).toFixed(1) + " µ/cm²/min"),
+      str(((count / (millis()-startTime) / rate) * 1000).toFixed(1) + " µ/cm²/min"),
       5,
       height - 5
     );
@@ -183,7 +184,8 @@ function mouseClicked() {
   } else {
     userStartAudio()
     started = true;
-    timer=millis();
+    startTime = millis();
+    timer = startTime;
   }
 }
 
