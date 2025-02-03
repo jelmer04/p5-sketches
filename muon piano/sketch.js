@@ -7,8 +7,8 @@ var accents = new Map();
 // at one per cm2 per minute, 4.3 muons per second
 // meaning one every 232.5ms
 
-var rate = 18.5 * 14 / 60;
-var delay = 1000/rate;
+var rate = (18.5 * 14) / 60;
+var delay = 1000 / rate;
 var stdev = delay;
 
 var timer = 0;
@@ -17,6 +17,8 @@ var keys = [];
 var splashes = [];
 
 var count = 0;
+
+var started = false;
 
 //synth
 var synth = new Tone.PolySynth(8, Tone.Synth, {
@@ -67,8 +69,10 @@ compressor.connect(reverb);
 reverb.toMaster();
 
 function setup() {
-  createCanvas(400, 300);
-  //console.log(pixelDensity());
+  getAudioContext().suspend();
+  
+  createCanvas(850, 650);
+  console.log(pixelDensity());
 
   colorMode(HSB);
   let ws = 50;
@@ -99,7 +103,7 @@ function setup() {
         i * w + w * 0.75,
         0,
         w * 0.5,
-        height*0.6,
+        height * 0.6,
         accents.get(blacks[i])
       );
       keys.push(k);
@@ -127,42 +131,60 @@ function draw() {
     }
   }
 
-  if (millis() >= timer) {
-    // Times up
-    var x = random(width);
-    var y = random(height);
+  if (started) {
+    if (millis() >= timer) {
+      // Times up
+      var x = random(width);
+      var y = random(height);
 
-    splashes.push(new Splash(x, y));
-    playNote(checkKeys(x, y));
+      splashes.push(new Splash(x, y));
+      playNote(checkKeys(x, y));
 
-    count++;
+      count++;
 
-    //let rand = -1;
-    //while (rand < 0) {
-    //  rand = randomGaussian(delay, stdev);
-    //}
-    
-    let rand = randomGaussian(delay, stdev);
-    rand = max(rand, 0);
-    
-    console.log(rand.toFixed(0));
-    //timer = millis() + rand;
-    timer = timer + rand;
+      //let rand = -1;
+      //while (rand < 0) {
+      //  rand = randomGaussian(delay, stdev);
+      //}
+
+      let rand = randomGaussian(delay, stdev);
+      rand = max(rand, 0);
+
+      console.log(rand.toFixed(0));
+      //timer = millis() + rand;
+      timer = timer + rand;
+    }
+
+    noStroke();
+    fill(100);
+    textSize(6);
+    textAlign(RIGHT);
+    text(str((millis() / 1000).toFixed(2)) + " s", width - 5, height - 5);
+
+    textAlign(LEFT);
+    text(
+      str(((count / millis() / rate) * 1000).toFixed(1) + " µ/cm²/min"),
+      5,
+      height - 5
+    );
+  } else {
+    background(255, 255, 255, 150);
+    textAlign(CENTER);
+    textSize(14);
+    noStroke();
+    text("Click to start", width/2, height/2);
   }
-
-  noStroke();
-  fill(100);
-  textSize(6);
-  textAlign(RIGHT);
-  text(str((millis() / 1000).toFixed(2))+" s", width - 5, height - 5);
-
-  textAlign(LEFT);
-  text(str(((count / millis())/rate*1000).toFixed(1)+" µ/cm²/min"), 5, height - 5);
 }
 
 function mouseClicked() {
-  splashes.push(new Splash(mouseX, mouseY));
-  playNote(checkKeys(mouseX, mouseY));
+  if (started) {
+    splashes.push(new Splash(mouseX, mouseY));
+    playNote(checkKeys(mouseX, mouseY));
+  } else {
+    userStartAudio()
+    started = true;
+    timer=millis();
+  }
 }
 
 function playNote(note) {
