@@ -158,7 +158,7 @@ function draw() {
 
     noStroke();
     fill(100);
-    textSize(6);
+    textSize(8);
     textAlign(RIGHT);
     text(str(((millis()-startTime) / 1000).toFixed(2)) + " s", width - 5, height - 5);
 
@@ -171,7 +171,7 @@ function draw() {
   } else {
     background(255, 255, 255, 150);
     textAlign(CENTER);
-    textSize(14);
+    textSize(28);
     noStroke();
     text("Click to start", width/2, height/2);
   }
