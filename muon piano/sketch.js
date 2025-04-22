@@ -3,6 +3,10 @@ var blacks = ["C#5", "D#5", "", "F#5", "G#5", "A#5"];
 
 var accents = new Map();
 
+var canvas;
+var description;
+
+
 // one octave is about 18.5 x 14 cm = 260cm2
 // at one per cm2 per minute, 4.3 muons per second
 // meaning one every 232.5ms
@@ -20,6 +24,7 @@ var count = 0;
 
 var started = false;
 var startTime = 0;
+var mute = false;
 
 //synth
 var synth = new Tone.PolySynth(8, Tone.Synth, {
@@ -32,7 +37,7 @@ var synth = new Tone.PolySynth(8, Tone.Synth, {
 synth.set("detune", -1200);
 synth.set("volume", -20);
 
-//sampler envelope
+//synth envelope
 synth.envelope = {
   attack: 0.2,
   decay: 0.2,
@@ -72,7 +77,10 @@ reverb.toMaster();
 function setup() {
   getAudioContext().suspend();
   
-  createCanvas(850, 650);
+  description = createDiv();
+  
+  canvas = createCanvas(850, 650);
+  canvas.mouseClicked(canvasClicked);
   console.log(pixelDensity());
 
   colorMode(HSB);
@@ -115,6 +123,8 @@ function setup() {
     let k = new Key(notes[i], i * w, 0, w, height, accents.get(notes[i]));
     keys.push(k);
   }
+  
+  stop();
 }
 
 function draw() {
@@ -158,10 +168,13 @@ function draw() {
 
     noStroke();
     fill(100);
+    
+    // time running
     textSize(8);
     textAlign(RIGHT);
     text(str(((millis()-startTime) / 1000).toFixed(2)) + " s", width - 5, height - 5);
 
+    // muons per cm2 per min
     textAlign(LEFT);
     text(
       str(((count / (millis()-startTime) / rate) * 1000).toFixed(1) + " µ/cm²/min"),
@@ -177,20 +190,59 @@ function draw() {
   }
 }
 
-function mouseClicked() {
+function canvasClicked() {
   if (started) {
     splashes.push(new Splash(mouseX, mouseY));
     playNote(checkKeys(mouseX, mouseY));
+  } 
+}
+  
+function mouseClicked() {
+  if (!started) {
+    start();
+  }
+}
+
+function start() {
+  userStartAudio()
+  started = true;
+  startTime = millis();
+  timer = startTime;
+  mute = false;
+  description.html("Click a key to play a note, press spacebar to mute, or escape to stop!");
+}
+
+function stop() {
+  started = false;
+  description.html("Click anywhere or press spacebar to start!");
+}
+
+function toggleMute() {
+  mute = !mute;
+  if (!mute) {
+    description.html("Click a key to play a note, press spacebar to mute, or escape to stop!");
   } else {
-    userStartAudio()
-    started = true;
-    startTime = millis();
-    timer = startTime;
+    description.html("Click a key to play a note, press spacebar to unmute, or escape to stop!");
+  }
+}
+
+function keyReleased(){
+  if (key == ' '){
+    if (started) {
+      toggleMute();
+    } else {
+      start();
+    }
+  }
+  else if (keyCode === ESCAPE){
+    stop();
   }
 }
 
 function playNote(note) {
-  synth.triggerAttackRelease(note, 0.4);
+  if (!mute) {
+    synth.triggerAttackRelease(note, 0.4);
+  }
 }
 
 class Key {
@@ -243,7 +295,7 @@ class Key {
 }
 
 function checkKeys(x, y) {
-  for (let key of keys) {
+  for (let key of keys) { 
     if (key.checkCoord(x, y)) {
       return key.note;
     }
